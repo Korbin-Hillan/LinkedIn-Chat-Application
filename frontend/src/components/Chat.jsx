@@ -21,6 +21,7 @@ const Chat = () => {
 
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const [isChatFocused, setIsChatFocused] = useState(true);
 
   const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5002";
 
@@ -28,6 +29,19 @@ const Chat = () => {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+  useEffect(() => {
+    const handleFocus = () => setIsChatFocused(true);
+    const handleBlur = () => setIsChatFocused(false);
+
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("blur", handleBlur);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("blur", handleBlur);
+    };
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
@@ -57,7 +71,7 @@ const Chat = () => {
       auth: {
         token: token,
       },
-      transports: ['websocket', 'polling'], // Explicitly set transports
+      transports: ["websocket", "polling"], // Explicitly set transports
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
     });
@@ -72,38 +86,40 @@ const Chat = () => {
       loadUsers();
     });
 
-      newSocket.on("user_status_changed", (data) => {
-    console.log("User status changed:", data);
-    
-    // Update the users list
-    setUsers((prevUsers) => {
-      // If user already exists, update their status
-      const existingUserIndex = prevUsers.findIndex(u => u._id === data.userId);
-      
-      if (existingUserIndex !== -1) {
-        const updatedUsers = [...prevUsers];
-        updatedUsers[existingUserIndex] = data.user;
-        return updatedUsers;
-      } else if (data.status === "online") {
-        // New user came online, add them to the list
-        return [...prevUsers, data.user];
-      }
-      
-      return prevUsers;
+    newSocket.on("user_status_changed", (data) => {
+      console.log("User status changed:", data);
+
+      // Update the users list
+      setUsers((prevUsers) => {
+        // If user already exists, update their status
+        const existingUserIndex = prevUsers.findIndex(
+          (u) => u._id === data.userId,
+        );
+
+        if (existingUserIndex !== -1) {
+          const updatedUsers = [...prevUsers];
+          updatedUsers[existingUserIndex] = data.user;
+          return updatedUsers;
+        } else if (data.status === "online") {
+          // New user came online, add them to the list
+          return [...prevUsers, data.user];
+        }
+
+        return prevUsers;
+      });
     });
-  });
 
     // Listen for complete user list updates
-  newSocket.on("user_list_updated", () => {
-    console.log("User list updated, reloading...");
-    loadUsers();
-  });
+    newSocket.on("user_list_updated", () => {
+      console.log("User list updated, reloading...");
+      loadUsers();
+    });
 
-  // Listen for new user registrations
-  newSocket.on("new_user_registered", (userData) => {
-    console.log("New user registered:", userData);
-    loadUsers(); // Reload the entire list to get the new user
-  });
+    // Listen for new user registrations
+    newSocket.on("new_user_registered", (userData) => {
+      console.log("New user registered:", userData);
+      loadUsers(); // Reload the entire list to get the new user
+    });
 
     newSocket.on("disconnect", () => {
       console.log("Disconnected from chat server");
@@ -123,12 +139,54 @@ const Chat = () => {
       }
     });
 
+    // Update the receive_message event handler
     newSocket.on("receive_message", (message) => {
+      console.log("📨 Received message:", {
+        message,
+        isChatFocused,
+        selectedUser: selectedUser?._id,
+        messageSender: message.sender._id,
+        messageReceiver: message.receiver._id,
+        currentUserId: currentUser?.id || currentUser?._id,
+        isFromSelectedUser: message.sender._id === selectedUser?._id,
+        isForCurrentUser:
+          message.receiver._id === (currentUser?.id || currentUser?._id),
+      });
+
       setMessages((prev) => [...prev, message]);
 
-      // Show notification if the message is from the selected user
-      if (message.sender._id === selectedUser?._id && document.hidden) {
-        showNotification(message);
+      const currentUserId = currentUser?.id || currentUser?._id;
+
+      if (
+        isChatFocused &&
+        selectedUser &&
+        message.sender._id === selectedUser._id &&
+        message.receiver._id === currentUserId
+      ) {
+        console.log("✅ Auto-marking message as read");
+
+        // Mark message as read immediately
+        newSocket.emit("message_read", { messageId: message._id });
+
+        // Update local state to show read status
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg._id === message._id ? { ...msg, isRead: true } : msg,
+          ),
+        );
+      } else {
+        console.log("❌ Not marking as read because:", {
+          isChatFocused,
+          isSelectedUser: selectedUser?._id === message.sender._id,
+          isForMe: message.receiver._id === currentUserId,
+        });
+      }
+
+      // Show notification if the message is from a different user or window not focused
+      if (message.sender._id !== selectedUser?._id || !isChatFocused) {
+        if (document.hidden) {
+          showNotification(message);
+        }
       }
     });
 
@@ -151,16 +209,16 @@ const Chat = () => {
     newSocket.on("message_read_receipt", (data) => {
       setMessages((prev) =>
         prev.map((msg) =>
-          msg._id === data.messageId ? { ...msg, isRead: true } : msg
-        )
+          msg._id === data.messageId ? { ...msg, isRead: true } : msg,
+        ),
       );
     });
 
-  newSocket.io.on("error", (error) => {
-    console.error("❌ Socket.IO error:", error);
-   });
+    newSocket.io.on("error", (error) => {
+      console.error("❌ Socket.IO error:", error);
+    });
 
-  setSocket(newSocket);
+    setSocket(newSocket);
 
     return () => {
       newSocket.close();
@@ -211,18 +269,111 @@ const Chat = () => {
       if (data.success) {
         setMessages(data.messages);
 
+        const currentUserId = currentUser?.id || currentUser?._id;
+
         // Mark unread messages as read
-        data.messages.forEach((msg) => {
-          if (!msg.isRead && msg.receiver._id === currentUser.id) {
+        const unreadMessages = data.messages.filter(
+          (msg) => !msg.isRead && msg.receiver._id === currentUser.id,
+        );
+
+        console.log("📚 Chat history loaded:", {
+          totalMessages: data.messages.length,
+          unreadMessages: unreadMessages.length,
+          currentUserId,
+        });
+
+        // Batch mark as read
+        unreadMessages.forEach((msg) => {
+          if (socket) {
             socket.emit("message_read", { messageId: msg._id });
           }
         });
+
+        // Update local state
+        if (unreadMessages.length > 0) {
+          setMessages((prev) =>
+            prev.map((msg) => {
+              const shouldMarkRead = unreadMessages.some(
+                (unread) => unread._id === msg._id,
+              );
+              return shouldMarkRead ? { ...msg, isRead: true } : msg;
+            }),
+          );
+        }
       }
     } catch (err) {
       console.error("Error loading chat history:", err);
       setError("Failed to load chat history");
     }
   };
+
+  // Add this to track when selected user changes
+  useEffect(() => {
+    if (selectedUser && socket && isChatFocused) {
+      // When switching to a new chat while focused, mark any unread messages
+      const currentUserId = currentUser?.id || currentUser?._id;
+      const unreadFromSelected = messages.filter(
+        (msg) =>
+          msg.sender._id === selectedUser._id &&
+          msg.receiver._id === currentUserId &&
+          !msg.isRead,
+      );
+
+      unreadFromSelected.forEach((msg) => {
+        socket.emit("message_read", { messageId: msg._id });
+      });
+
+      // Update local state
+      if (unreadFromSelected.length > 0) {
+        setMessages((prev) =>
+          prev.map((msg) => {
+            const shouldMarkRead = unreadFromSelected.some(
+              (unread) => unread._id === msg._id,
+            );
+            return shouldMarkRead ? { ...msg, isRead: true } : msg;
+          }),
+        );
+      }
+    }
+  }, [selectedUser?._id, isChatFocused]); // Re-run when selected user or focus changes
+
+  // Also add window visibility change detection
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && selectedUser && socket) {
+        // When tab becomes visible, mark unread messages from selected user
+        const currentUserId = currentUser?.id || currentUser?._id;
+        const unreadFromSelected = messages.filter(
+          (msg) =>
+            msg.sender._id === selectedUser._id &&
+            msg.receiver._id === currentUserId &&
+            !msg.isRead,
+        );
+
+        unreadFromSelected.forEach((msg) => {
+          socket.emit("message_read", { messageId: msg._id });
+        });
+
+        // Update local state
+        if (unreadFromSelected.length > 0) {
+          setMessages((prev) =>
+            prev.map((msg) => {
+              const shouldMarkRead = unreadFromSelected.some(
+                (unread) => unread._id === msg._id,
+              );
+              return shouldMarkRead ? { ...msg, isRead: true } : msg;
+            }),
+          );
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [selectedUser, socket, messages, currentUser]);
 
   // Select a user to chat with
   const selectUser = (user) => {
@@ -297,30 +448,28 @@ const Chat = () => {
     try {
       const token = localStorage.getItem("token");
 
-
-    // Only call API if we have a token
-    if (token) {
-      await fetch(`${API_URL}/api/auth/logout`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      // Only call API if we have a token
+      if (token) {
+        await fetch(`${API_URL}/api/auth/logout`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
+    } catch (err) {
+      console.error("Logout error:", err);
+      // Continue with logout even if API call fails
     }
-  } catch (err) {
-    console.error("Logout error:", err);
-    // Continue with logout even if API call fails
-  }
-  // Clear all storage
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
-  sessionStorage.clear();
-  if (socket) {
-    socket.disconnect();
-  }
-  
-  // Use window.location for a clean redirect
-  window.location.href = "/";
+    // Clear all storage
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    sessionStorage.clear();
+    if (socket) {
+      socket.disconnect();
+    }
+
+    window.location.href = "/";
   };
 
   // Format timestamp

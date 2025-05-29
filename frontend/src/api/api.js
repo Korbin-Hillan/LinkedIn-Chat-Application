@@ -19,7 +19,7 @@ api.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Handle token expiration
@@ -33,7 +33,7 @@ api.interceptors.response.use(
       window.location.href = "/";
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 // Auth endpoints

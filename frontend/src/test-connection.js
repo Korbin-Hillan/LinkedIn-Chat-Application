@@ -30,7 +30,7 @@ async function testConnection() {
   console.log("\n😞 No backend server found!");
   console.log("\nTroubleshooting steps:");
   console.log(
-    "1. Make sure your backend is running: cd backend && npm run dev"
+    "1. Make sure your backend is running: cd backend && npm run dev",
   );
   console.log("2. Check if MongoDB is running or accessible");
   console.log("3. Check your backend .env file has correct PORT setting");
