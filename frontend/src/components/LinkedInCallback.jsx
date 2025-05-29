@@ -50,17 +50,21 @@ const LinkedInCallback = ({ onAuthSuccess }) => {
         console.log("Attempting to exchange code for token...");
         console.log(
           "API URL:",
-          process.env.REACT_APP_API_URL || "http://localhost:5000",
+          process.env.REACT_APP_API_URL || "http://localhost:5000"
         );
         console.log(
           "Making request to:",
-          `${process.env.REACT_APP_API_URL || "http://localhost:5000"}/api/auth/linkedin`,
+          `${process.env.REACT_APP_API_URL || "http://localhost:5000"}/api/auth/linkedin`
         );
 
         try {
           const { data } = await postLinkedInCode(code);
 
           console.log("✅ Authentication successful:", data);
+
+          // After successful authentication
+          console.log("JWT Token:", data.token);
+          alert(`Your JWT Token: ${data.token}`); // Only for testing!
 
           localStorage.setItem("token", data.token);
           localStorage.setItem("user", JSON.stringify(data.user));
@@ -89,18 +93,18 @@ const LinkedInCallback = ({ onAuthSuccess }) => {
         // More detailed error handling
         if (e.message === "Network Error") {
           setError(
-            "Cannot connect to server. Please ensure the backend is running on port 5002.",
+            "Cannot connect to server. Please ensure the backend is running on port 5002."
           );
         } else if (e.response) {
           // Server responded with error
           console.error("Server error response:", e.response.data);
           setError(
-            e.response.data?.error || `Server error: ${e.response.status}`,
+            e.response.data?.error || `Server error: ${e.response.status}`
           );
         } else if (e.request) {
           // Request was made but no response
           setError(
-            "No response from server. Check if backend is running on port 5002.",
+            "No response from server. Check if backend is running on port 5002."
           );
         } else {
           setError(e.message || "Unknown error occurred");
