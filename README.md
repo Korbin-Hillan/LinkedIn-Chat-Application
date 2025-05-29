@@ -14,7 +14,6 @@ A real-time chat application with LinkedIn OAuth authentication, built with Node
 
 ### Bonus Features
 
-- **Typing Indicators**: See when other users are typing
 - **Read Receipts**: Track message read status with visual indicators
 - **Redis Caching**: Improved performance for frequently accessed data
 - **Rate Limiting**: Protection against API abuse
@@ -432,42 +431,7 @@ socket.on("user_status_changed", (data) => {
         http://localhost:5002/api/auth/profile
 ````
 
-## 🚀 Deployment
 
-### Deploy to Heroku
-
-1. Install Heroku CLI
-2. Create a new Heroku app:
-
-   ```bash
-   heroku create your-app-name
-   ```
-
-3. Set environment variables:
-
-   ```bash
-   heroku config:set MONGODB_URI="your-mongodb-atlas-uri"
-   heroku config:set JWT_SECRET="your-secret"
-   heroku config:set LINKEDIN_CLIENT_ID="your-client-id"
-   heroku config:set LINKEDIN_CLIENT_SECRET="your-client-secret"
-   ```
-
-4. Deploy:
-   ```bash
-   git push heroku main
-   ```
-
-### Deploy to Render
-
-1. Connect your GitHub repository
-2. Configure environment variables in Render dashboard
-3. Deploy with automatic builds
-
-### Deploy to Railway
-
-1. Install Railway CLI
-2. Run `railway login`
-3. Run `railway up`
 4. Configure environment variables in Railway dashboard
 
 ## 📁 Project Structure
