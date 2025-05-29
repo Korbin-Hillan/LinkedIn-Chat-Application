@@ -42,7 +42,7 @@ const invalidateCache = async (pattern) => {
     if (keys.length > 0) {
       await redis.del(keys);
       console.log(
-        `Invalidated ${keys.length} cache entries matching pattern: ${pattern}`
+        `Invalidated ${keys.length} cache entries matching pattern: ${pattern}`,
       );
     }
   } catch (error) {

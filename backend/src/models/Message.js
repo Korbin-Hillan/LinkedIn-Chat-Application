@@ -28,7 +28,7 @@ const messageSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Indexes for efficient querying

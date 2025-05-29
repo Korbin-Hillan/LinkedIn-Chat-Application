@@ -22,7 +22,7 @@ router.post(
     body("receiverId").notEmpty().withMessage("Receiver ID is required"),
     body("content").notEmpty().withMessage("Message content is required"),
   ],
-  sendMessage
+  sendMessage,
 );
 
 // Get chat history with a specific user - with caching (10 minute cache)

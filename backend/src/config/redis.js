@@ -19,7 +19,7 @@ const connectRedis = async () => {
           // Stop trying after 3 attempts
           if (retries > 3) {
             console.log(
-              "⚠️  Redis connection failed after 3 attempts. Continuing without cache."
+              "⚠️  Redis connection failed after 3 attempts. Continuing without cache.",
             );
             redisEnabled = false;
             return false; // Stop reconnecting
@@ -52,10 +52,10 @@ const connectRedis = async () => {
     await redisClient.connect();
   } catch (error) {
     console.log(
-      "⚠️  Redis not available. Application will run without caching."
+      "⚠️  Redis not available. Application will run without caching.",
     );
     console.log(
-      "   To use Redis: 1) Install Redis locally, or 2) Set REDIS_ENABLED=false to disable"
+      "   To use Redis: 1) Install Redis locally, or 2) Set REDIS_ENABLED=false to disable",
     );
     redisEnabled = false;
     redisClient = null;

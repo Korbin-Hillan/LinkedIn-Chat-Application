@@ -37,7 +37,7 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // index for quick lookup by linkedinId

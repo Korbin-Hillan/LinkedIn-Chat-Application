@@ -54,7 +54,7 @@ const socketHandler = (io) => {
     // Get the updated user info and broadcast to all users
     try {
       const connectedUser = await User.findById(socket.userId).select(
-        "firstName lastName profilePicture isOnline lastSeen"
+        "firstName lastName profilePicture isOnline lastSeen",
       );
 
       // Broadcast to all connected clients that a user came online
@@ -219,7 +219,7 @@ const socketHandler = (io) => {
       // Get the updated user info and broadcast to all users
       try {
         const disconnectedUser = await User.findById(socket.userId).select(
-          "firstName lastName profilePicture isOnline lastSeen"
+          "firstName lastName profilePicture isOnline lastSeen",
         );
 
         // Broadcast to all connected clients that a user went offline

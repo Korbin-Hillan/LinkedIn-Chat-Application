@@ -1,70 +1,581 @@
-# Getting Started with Create React App
+# LinkedIn Chat Application
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A real-time chat application with LinkedIn OAuth authentication, built with Node.js, Express, MongoDB, and Socket.IO.
 
-## Available Scripts
+## 🚀 Features
 
-In the project directory, you can run:
+### Core Features
 
-### `npm start`
+- **LinkedIn OAuth 2.0 Authentication**: Secure login using LinkedIn profiles
+- **JWT-based Authorization**: Stateless authentication for API requests
+- **Real-time Messaging**: Instant message delivery using WebSocket connections
+- **Chat History**: Persistent message storage with pagination support
+- **User Presence**: Online/offline status tracking
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### Bonus Features
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- **Typing Indicators**: See when other users are typing
+- **Read Receipts**: Track message read status with visual indicators
+- **Redis Caching**: Improved performance for frequently accessed data
+- **Rate Limiting**: Protection against API abuse
+- **Auto-reconnection**: Automatic WebSocket reconnection on disconnect
 
-### `npm test`
+## 🛠️ Tech Stack
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- **Backend Framework**: Node.js with Express.js
+- **Database**: MongoDB with Mongoose ODM
+- **Authentication**: LinkedIn OAuth 2.0 + JWT (jsonwebtoken)
+- **Real-time Communication**: Socket.IO
+- **Caching**: Redis (optional)
+- **Security**: Helmet, CORS, bcrypt, express-rate-limit
+- **Testing**: Jest, Supertest
 
-### `npm run build`
+## 📋 Prerequisites
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- Node.js (v14 or higher)
+- MongoDB (local installation or MongoDB Atlas account)
+- Redis (optional, for caching features)
+- LinkedIn App credentials (Client ID and Client Secret)
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## 🔧 Installation
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 1. Clone the Repository
 
-### `npm run eject`
+```bash
+git clone https://github.com/yourusername/linkedin-chat-app.git
+cd linkedin-chat-app
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### 2. Install Dependencies
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```bash
+# Install backend dependencies
+cd backend
+npm install
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+# Install frontend dependencies (if using the provided frontend)
+cd ../frontend
+npm install
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### 3. Environment Configuration
 
-## Learn More
+Create a `.env` file in the backend directory:
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```env
+# Server Configuration
+PORT=5002
+NODE_ENV=development
+FRONTEND_URL=http://localhost:3000
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+# Database
+MONGODB_URI=mongodb://localhost:27017/linkedin-chat
+# For MongoDB Atlas: mongodb+srv://username:password@cluster.mongodb.net/linkedin-chat
 
-### Code Splitting
+# JWT Configuration
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+JWT_EXPIRES_IN=7d
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+# LinkedIn OAuth
+LINKEDIN_CLIENT_ID=your-linkedin-client-id
+LINKEDIN_CLIENT_SECRET=your-linkedin-client-secret
+LINKEDIN_CALLBACK_URL=http://localhost:3000/auth/linkedin/callback
 
-### Analyzing the Bundle Size
+# Redis (Optional)
+REDIS_URL=redis://localhost:6379
+REDIS_ENABLED=true
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+# Rate Limiting
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+```
 
-### Making a Progressive Web App
+### 4. LinkedIn App Setup
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+1. Go to [LinkedIn Developers](https://www.linkedin.com/developers/)
+2. Create a new app or select existing
+3. In the **Products** tab, add "Sign In with LinkedIn using OpenID Connect"
+4. In the **Auth** tab:
+   - Add authorized redirect URL: `http://localhost:3000/auth/linkedin/callback`
+   - Copy Client ID and Client Secret to your `.env` file
+5. Verify the app has the required scopes: `openid`, `profile`, `email`
 
-### Advanced Configuration
+### 5. Database Setup
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+If using local MongoDB:
 
-### Deployment
+```bash
+# Start MongoDB
+mongod
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+If using MongoDB Atlas:
 
-### `npm run build` fails to minify
+1. Create a free cluster at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+2. Whitelist your IP address
+3. Create a database user
+4. Copy connection string to `MONGODB_URI` in `.env`
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### 6. Redis Setup (Optional)
+
+If using Redis for caching:
+
+```bash
+# Install Redis (macOS)
+brew install redis
+brew services start redis
+
+# Install Redis (Ubuntu)
+sudo apt update
+sudo apt install redis-server
+sudo systemctl start redis
+```
+
+## 🚀 Running the Application
+
+### Development Mode
+
+```bash
+# Start backend server
+cd backend
+npm run dev
+
+# Start frontend (in a new terminal)
+cd frontend
+npm start
+```
+
+### Production Mode
+
+```bash
+# Build frontend
+cd frontend
+npm run build
+
+# Start backend in production
+cd backend
+npm start
+```
+
+### Using the Start Script
+
+```bash
+# From project root
+node start-app.js
+```
+
+This will start both backend and frontend simultaneously.
+
+## 📡 API Documentation
+
+### Authentication Endpoints
+
+#### 1. LinkedIn OAuth Login
+
+```http
+POST /api/auth/linkedin
+Content-Type: application/json
+
+{
+  "code": "linkedin-authorization-code"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "user": {
+    "id": "user-mongodb-id",
+    "linkedinId": "linkedin-id",
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john.doe@example.com",
+    "profilePicture": "https://media.licdn.com/..."
+  }
+}
+```
+
+#### 2. Get User Profile
+
+```http
+GET /api/auth/profile
+Authorization: Bearer {jwt-token}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "user": {
+    "_id": "user-mongodb-id",
+    "linkedinId": "linkedin-id",
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john.doe@example.com",
+    "profilePicture": "https://media.licdn.com/...",
+    "isOnline": true,
+    "lastSeen": "2024-01-28T10:30:00.000Z"
+  }
+}
+```
+
+#### 3. Logout
+
+```http
+POST /api/auth/logout
+Authorization: Bearer {jwt-token}
+```
+
+### Message Endpoints
+
+#### 1. Send Message
+
+```http
+POST /api/messages
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+  "receiverId": "recipient-user-id",
+  "content": "Hello, how are you?"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": {
+    "_id": "message-id",
+    "sender": {
+      "_id": "sender-id",
+      "firstName": "John",
+      "lastName": "Doe",
+      "profilePicture": "https://..."
+    },
+    "receiver": {
+      "_id": "receiver-id",
+      "firstName": "Jane",
+      "lastName": "Smith",
+      "profilePicture": "https://..."
+    },
+    "content": "Hello, how are you?",
+    "timestamp": "2024-01-28T10:45:00.000Z",
+    "isRead": false
+  }
+}
+```
+
+#### 2. Get Chat History
+
+```http
+GET /api/messages/{userId}?page=1&limit=50
+Authorization: Bearer {jwt-token}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "messages": [
+    {
+      "_id": "message-id",
+      "sender": {
+        /* sender details */
+      },
+      "receiver": {
+        /* receiver details */
+      },
+      "content": "Message content",
+      "timestamp": "2024-01-28T10:30:00.000Z",
+      "isRead": true
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 50,
+    "total": 123,
+    "pages": 3
+  }
+}
+```
+
+#### 3. Get All Users
+
+```http
+GET /api/messages/users/all
+Authorization: Bearer {jwt-token}
+```
+
+### Health Check
+
+```http
+GET /health
+```
+
+**Response:**
+
+```json
+{
+  "status": "OK",
+  "timestamp": "2024-01-28T10:30:00.000Z",
+  "environment": "development",
+  "uptime": 3600,
+  "dependencies": {
+    "mongodb": "connected",
+    "redis": "connected"
+  }
+}
+```
+
+## 🔌 WebSocket Events
+
+### Client to Server Events
+
+#### Send Message
+
+```javascript
+socket.emit("send_message", {
+  receiverId: "recipient-user-id",
+  content: "Hello!",
+});
+```
+
+#### Typing Indicators
+
+```javascript
+socket.emit("typing_start", { receiverId: "recipient-user-id" });
+socket.emit("typing_stop", { receiverId: "recipient-user-id" });
+```
+
+#### Mark Message as Read
+
+```javascript
+socket.emit("message_read", { messageId: "message-id" });
+```
+
+### Server to Client Events
+
+#### Receive Message
+
+```javascript
+socket.on("receive_message", (message) => {
+  // Handle incoming message
+});
+```
+
+#### Typing Status
+
+```javascript
+socket.on("user_typing", (data) => {
+  // Show typing indicator
+});
+
+socket.on("user_stopped_typing", (data) => {
+  // Hide typing indicator
+});
+```
+
+#### Read Receipt
+
+```javascript
+socket.on("message_read_receipt", (data) => {
+  // Update message read status
+});
+```
+
+#### User Status Changes
+
+```javascript
+socket.on("user_status_changed", (data) => {
+  // Update user online/offline status
+});
+```
+
+## 🧪 Testing
+
+### Run Tests
+
+```bash
+cd backend
+npm test
+```
+
+### Test with Postman
+
+1. Import the provided Postman collection
+2. Set environment variables:
+   - `baseUrl`: http://localhost:5002
+   - `authToken`: (obtained from login)
+   - `userId`: (your user ID)
+   - `receiverId`: (another user's ID)
+
+### Manual Testing Flow
+
+1. **OAuth Flow**:
+
+   - Navigate to http://localhost:3000
+   - Click "Sign in with LinkedIn"
+   - Authorize the application
+   - Verify redirect to chat interface
+
+2. **Messaging**:
+
+   - Send messages between two logged-in users
+   - Verify real-time delivery
+   - Check typing indicators
+   - Confirm read receipts
+
+3. **API Testing**:
+
+   ```bash
+   # Test health endpoint
+   curl http://localhost:5002/health
+
+   # Test authenticated endpoint
+   curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+        http://localhost:5002/api/auth/profile
+   ```
+
+## 🚀 Deployment
+
+### Deploy to Heroku
+
+1. Install Heroku CLI
+2. Create a new Heroku app:
+
+   ```bash
+   heroku create your-app-name
+   ```
+
+3. Set environment variables:
+
+   ```bash
+   heroku config:set MONGODB_URI="your-mongodb-atlas-uri"
+   heroku config:set JWT_SECRET="your-secret"
+   heroku config:set LINKEDIN_CLIENT_ID="your-client-id"
+   heroku config:set LINKEDIN_CLIENT_SECRET="your-client-secret"
+   ```
+
+4. Deploy:
+   ```bash
+   git push heroku main
+   ```
+
+### Deploy to Render
+
+1. Connect your GitHub repository
+2. Configure environment variables in Render dashboard
+3. Deploy with automatic builds
+
+### Deploy to Railway
+
+1. Install Railway CLI
+2. Run `railway login`
+3. Run `railway up`
+4. Configure environment variables in Railway dashboard
+
+## 📁 Project Structure
+
+```
+linkedin-chat-app/
+├── backend/
+│   ├── src/
+│   │   ├── config/
+│   │   │   ├── database.js      # MongoDB connection
+│   │   │   └── redis.js         # Redis connection
+│   │   ├── controllers/
+│   │   │   ├── authController.js
+│   │   │   └── messageController.js
+│   │   ├── middleware/
+│   │   │   ├── auth.js          # JWT authentication
+│   │   │   ├── errorHandler.js
+│   │   │   ├── rateLimiter.js
+│   │   │   └── cache.js         # Redis caching
+│   │   ├── models/
+│   │   │   ├── User.js
+│   │   │   └── Message.js
+│   │   ├── routes/
+│   │   │   ├── auth.js
+│   │   │   └── messages.js
+│   │   └── utils/
+│   │       ├── jwt.js
+│   │       └── socketHandler.js
+│   ├── tests/
+│   ├── .env.example
+│   ├── package.json
+│   └── server.js
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── api/
+│   │   └── App.js
+│   └── package.json
+└── README.md
+```
+
+## 🔒 Security Considerations
+
+- JWT tokens expire after 7 days by default
+- Rate limiting prevents API abuse (5 auth attempts per 15 minutes)
+- CORS configured for specified frontend URL only
+- Helmet.js provides security headers
+- Input validation and sanitization on all endpoints
+- MongoDB injection protection via Mongoose
+- XSS prevention in message content
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+1. **LinkedIn OAuth Error**:
+
+   - Verify redirect URI matches exactly in LinkedIn app settings
+   - Ensure "Sign In with LinkedIn using OpenID Connect" product is added
+   - Check Client ID and Secret are correct
+
+2. **WebSocket Connection Failed**:
+
+   - Ensure backend is running on correct port
+   - Check CORS settings match frontend URL
+   - Verify JWT token is valid
+
+3. **MongoDB Connection Error**:
+
+   - Check MongoDB is running
+   - Verify connection string is correct
+   - For Atlas, ensure IP is whitelisted
+
+4. **Redis Connection Error**:
+   - Redis is optional; app works without it
+   - To disable: set `REDIS_ENABLED=false`
+
+## 📝 License
+
+MIT License - see LICENSE file for details
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 👥 Authors
+
+- Your Name - [GitHub Profile](https://github.com/yourusername)
+
+## 🙏 Acknowledgments
+
+- LinkedIn for OAuth integration
+- Socket.IO for real-time capabilities
+- MongoDB team for the database
+- All open-source contributors

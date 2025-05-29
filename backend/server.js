@@ -4,13 +4,13 @@ console.log("🔧 Server Configuration:");
 console.log("  PORT:", process.env.PORT || 5002);
 console.log(
   "  FRONTEND_URL:",
-  process.env.FRONTEND_URL || "http://localhost:3000"
+  process.env.FRONTEND_URL || "http://localhost:3000",
 );
 console.log("  MongoDB URI:", process.env.MONGODB_URI ? "✓ Set" : "✗ Not Set");
 console.log("  JWT Secret:", process.env.JWT_SECRET ? "✓ Set" : "✗ Not Set");
 console.log(
   "  LinkedIn Client ID:",
-  process.env.LINKEDIN_CLIENT_ID ? "✓ Set" : "✗ Not Set"
+  process.env.LINKEDIN_CLIENT_ID ? "✓ Set" : "✗ Not Set",
 );
 console.log("");
 
@@ -60,7 +60,7 @@ const io = socketIo(server, {
 connectRedis().catch((err) => {
   console.error(
     "⚠️  Redis connection failed, continuing without cache:",
-    err.message
+    err.message,
   );
 });
 
@@ -81,7 +81,7 @@ app.use(
       includeSubDomains: true,
       preload: true,
     },
-  })
+  }),
 );
 
 // CORS configuration
@@ -91,7 +91,7 @@ app.use(
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
-  })
+  }),
 );
 
 // Logging
@@ -108,7 +108,7 @@ app.use((req, res, next) => {
   res.on("finish", () => {
     const duration = Date.now() - req.startTime;
     console.log(
-      `${req.method} ${req.path} - ${res.statusCode} - ${duration}ms`
+      `${req.method} ${req.path} - ${res.statusCode} - ${duration}ms`,
     );
   });
 

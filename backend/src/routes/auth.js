@@ -15,7 +15,7 @@ router.use(authLimiter);
 router.post(
   "/linkedin",
   [body("code").notEmpty().withMessage("Authorization code is required")],
-  linkedinAuth
+  linkedinAuth,
 );
 
 router.get("/profile", auth, getProfile); // Add auth middleware and getProfile handler

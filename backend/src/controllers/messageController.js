@@ -37,7 +37,7 @@ const sendMessage = async (req, res) => {
       "/:userId",
       auth,
       cacheMiddleware("messages", 600),
-      getChatHistory
+      getChatHistory,
     );
 
     // Populate sender and receiver info
