@@ -6,8 +6,13 @@ const {
   getAllUsers,
 } = require("../controllers/messageController");
 const auth = require("../middleware/auth");
+const { cacheMiddleware } = require("../middleware/cache");
+const { messageLimiter } = require("../middleware/rateLimiter");
 
 const router = express.Router();
+
+// Apply message rate limiter to sending messages
+router.use("/", messageLimiter);
 
 // Send a message
 router.post(
@@ -20,10 +25,10 @@ router.post(
   sendMessage
 );
 
-// Get chat history with a specific user
-router.get("/:userId", auth, getChatHistory);
+// Get chat history with a specific user - with caching (10 minute cache)
+router.get("/:userId", auth, cacheMiddleware("messages", 600), getChatHistory);
 
-// Get all users (for chat list)
-router.get("/users/all", auth, getAllUsers);
+// Get all users (for chat list) - with caching (5 minute cache)
+router.get("/users/all", auth, cacheMiddleware("users", 300), getAllUsers);
 
 module.exports = router;

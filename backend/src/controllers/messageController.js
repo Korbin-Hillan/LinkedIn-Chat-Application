@@ -1,6 +1,7 @@
 const Message = require("../models/Message");
 const User = require("../models/User");
 const { validationResult } = require("express-validator");
+const { invalidateCache } = require("../middleware/cache");
 
 const sendMessage = async (req, res) => {
   try {
@@ -28,6 +29,17 @@ const sendMessage = async (req, res) => {
 
     await message.save();
 
+    await invalidateCache(`messages:${senderId}:*`);
+    await invalidateCache(`messages:${receiverId}:*`);
+
+    // Apply cache middleware to getChatHistory route in messages.js:
+    router.get(
+      "/:userId",
+      auth,
+      cacheMiddleware("messages", 600),
+      getChatHistory
+    );
+
     // Populate sender and receiver info
     await message.populate("sender", "firstName lastName profilePicture");
     await message.populate("receiver", "firstName lastName profilePicture");
@@ -45,7 +57,10 @@ const sendMessage = async (req, res) => {
 const getChatHistory = async (req, res) => {
   try {
     const { userId } = req.params;
+    const { page = 1, limit = 50 } = req.query;
     const currentUserId = req.user._id;
+
+    const skip = (page - 1) * limit;
 
     // Get messages between current user and specified user
     const messages = await Message.find({
@@ -56,11 +71,26 @@ const getChatHistory = async (req, res) => {
     })
       .populate("sender", "firstName lastName profilePicture")
       .populate("receiver", "firstName lastName profilePicture")
-      .sort({ timestamp: 1 }); // Sort by timestamp (oldest first)
+      .sort({ timestamp: 1 }) // Sort by timestamp (oldest first)
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await Message.countDocuments({
+      $or: [
+        { sender: currentUserId, receiver: userId },
+        { sender: userId, receiver: currentUserId },
+      ],
+    });
 
     res.json({
       success: true,
       messages,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit),
+      },
     });
   } catch (error) {
     console.error("Get chat history error:", error);
