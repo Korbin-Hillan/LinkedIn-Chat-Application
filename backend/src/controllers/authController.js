@@ -1,8 +1,6 @@
 const axios = require("axios");
-const qs = require("querystring");
 const User = require("../models/User");
 const { generateToken } = require("../utils/jwt");
-const { profile } = require("console");
 
 const linkedinAuth = async (req, res) => {
   try {
@@ -10,15 +8,15 @@ const linkedinAuth = async (req, res) => {
 
     console.log(
       "📝 Received authorization code:",
-      code ? "Present" : "Missing",
+      code ? "Present" : "Missing"
     );
     console.log(
       "🔧 Using Client ID:",
-      process.env.LINKEDIN_CLIENT_ID ? "Set" : "Missing",
+      process.env.LINKEDIN_CLIENT_ID ? "Set" : "Missing"
     );
     console.log(
       "🔑 Using Client Secret:",
-      process.env.LINKEDIN_CLIENT_SECRET ? "Set" : "Missing",
+      process.env.LINKEDIN_CLIENT_SECRET ? "Set" : "Missing"
     );
     console.log("🔗 Using Redirect URI:", process.env.LINKEDIN_CALLBACK_URL);
 
@@ -46,7 +44,7 @@ const linkedinAuth = async (req, res) => {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
         },
-      },
+      }
     );
 
     console.log("✅ Token exchange successful");
@@ -60,7 +58,7 @@ const linkedinAuth = async (req, res) => {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
-      },
+      }
     );
 
     const userInfo = userinfoResponse.data;
@@ -126,7 +124,7 @@ const linkedinAuth = async (req, res) => {
   } catch (error) {
     console.error(
       "LinkedIn OpenID Connect auth error:",
-      error.response?.data || error.message,
+      error.response?.data || error.message
     );
     if (error.response?.status === 400) {
       return res.status(400).json({
