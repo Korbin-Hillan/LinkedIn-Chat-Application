@@ -28,7 +28,6 @@ A real-time chat application with LinkedIn OAuth authentication, built with Node
 - **Real-time Communication**: Socket.IO
 - **Caching**: Redis (optional)
 - **Security**: Helmet, CORS, bcrypt, express-rate-limit
-- **Testing**: Jest, Supertest
 
 ## 📋 Prerequisites
 
@@ -392,20 +391,10 @@ socket.on("message_read_receipt", (data) => {
 
 #### User Status Changes
 
-```javascript
+````javascript
 socket.on("user_status_changed", (data) => {
   // Update user online/offline status
 });
-```
-
-## 🧪 Testing
-
-### Run Tests
-
-```bash
-cd backend
-npm test
-```
 
 ### Test with Postman
 
@@ -441,7 +430,7 @@ npm test
    # Test authenticated endpoint
    curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
         http://localhost:5002/api/auth/profile
-   ```
+````
 
 ## 🚀 Deployment
 
@@ -530,6 +519,7 @@ linkedin-chat-app/
 - Input validation and sanitization on all endpoints
 - MongoDB injection protection via Mongoose
 - XSS prevention in message content
+- Heroku handles handles SSL termination so no need to add HTTPS.
 
 ## 🐛 Troubleshooting
 
@@ -556,26 +546,3 @@ linkedin-chat-app/
 4. **Redis Connection Error**:
    - Redis is optional; app works without it
    - To disable: set `REDIS_ENABLED=false`
-
-## 📝 License
-
-MIT License - see LICENSE file for details
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 👥 Authors
-
-- Your Name - [GitHub Profile](https://github.com/yourusername)
-
-## 🙏 Acknowledgments
-
-- LinkedIn for OAuth integration
-- Socket.IO for real-time capabilities
-- MongoDB team for the database
-- All open-source contributors

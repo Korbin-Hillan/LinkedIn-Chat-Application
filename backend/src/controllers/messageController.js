@@ -32,14 +32,6 @@ const sendMessage = async (req, res) => {
     await invalidateCache(`messages:${senderId}:*`);
     await invalidateCache(`messages:${receiverId}:*`);
 
-    // Apply cache middleware to getChatHistory route in messages.js:
-    router.get(
-      "/:userId",
-      auth,
-      cacheMiddleware("messages", 600),
-      getChatHistory,
-    );
-
     // Populate sender and receiver info
     await message.populate("sender", "firstName lastName profilePicture");
     await message.populate("receiver", "firstName lastName profilePicture");
