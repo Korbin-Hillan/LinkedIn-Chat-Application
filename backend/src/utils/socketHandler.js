@@ -31,7 +31,7 @@ const socketHandler = (io) => {
   io.on("connection", async (socket) => {
     console.log(`User ${socket.user.firstName} connected`);
 
-    // Store socket ID in Redis for user session management
+    // Store socket ID and online status in Redis for user session management
     const redis = getRedisClient();
     if (redis && redis.isOpen) {
       try {
@@ -90,6 +90,7 @@ const socketHandler = (io) => {
           timestamp: new Date(),
         });
 
+        // Save message to database
         await message.save();
         await message.populate("sender", "firstName lastName profilePicture");
         await message.populate("receiver", "firstName lastName profilePicture");
@@ -127,13 +128,14 @@ const socketHandler = (io) => {
 
       if (redis && redis.isOpen) {
         try {
-          // Store typing status with 5 second expiry
+          // Store typing status expires in 5 seconds
           await redis.setEx(typingKey, 5, socket.user.firstName);
         } catch (error) {
           console.error("Redis typing indicator error:", error);
         }
       }
 
+      // typing indicator to receiver
       socket.to(data.receiverId).emit("user_typing", {
         userId: socket.userId,
         userName: socket.user.firstName,

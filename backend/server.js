@@ -1,19 +1,4 @@
 require("dotenv").config();
-
-console.log("🔧 Server Configuration:");
-console.log("  PORT:", process.env.PORT || 5002);
-console.log(
-  "  FRONTEND_URL:",
-  process.env.FRONTEND_URL || "http://localhost:3000"
-);
-console.log("  MongoDB URI:", process.env.MONGODB_URI ? "✓ Set" : "✗ Not Set");
-console.log("  JWT Secret:", process.env.JWT_SECRET ? "✓ Set" : "✗ Not Set");
-console.log(
-  "  LinkedIn Client ID:",
-  process.env.LINKEDIN_CLIENT_ID ? "✓ Set" : "✗ Not Set"
-);
-console.log("");
-
 const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
@@ -38,20 +23,20 @@ connectDB().catch((err) => {
 
 const app = express();
 
-// Read the local .pem files
+// Read the local .pem files if i was to use HTTPS
 //const options = {
 //  key: fs.readFileSync("../key.pem"),
 //  cert: fs.readFileSync("../cert.pem"),
 //};
 
-const server = http.createServer(app);
-const io = socketIo(server, {
+const httpServer = http.createServer(app);
+const io = socketIo(httpServer, {
   cors: {
     origin: process.env.FRONTEND_URL || "https://localhost:3000",
     methods: ["GET", "POST"],
     credentials: true,
   },
-  transports: ["websocket", "polling"],
+  transports: ["websocket", "polling"], // prioritize WebSocket but fallback to polling if necessary
   pingTimeout: 60000,
   pingInterval: 25000,
 });
@@ -64,18 +49,19 @@ connectRedis().catch((err) => {
   );
 });
 
-// Security Middleware
+// Security Middleware for express.js for http headers
 app.use(
   helmet({
     contentSecurityPolicy: {
       directives: {
-        defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        scriptSrc: ["'self'"],
-        imgSrc: ["'self'", "https:", "data:"],
-        connectSrc: ["'self'", "wss:", "https:"],
+        defaultSrc: ["'self'"], // only allows resource from your own domain
+        styleSrc: ["'self'"], // CSS can only come from your own domain
+        scriptSrc: ["'self'"], // blocks external scripts
+        imgSrc: ["'self'", "https:", "data:"], // allows images from your own domain, HTTPS, and data URIs
+        connectSrc: ["'self'", "wss:", "https:"], // allows WebSocket and HTTPS connections
       },
     },
+    // Forces browsers to use HTTPS
     hsts: {
       maxAge: 31536000,
       includeSubDomains: true,
@@ -84,7 +70,7 @@ app.use(
   })
 );
 
-// CORS configuration
+// supports secure cross-origin requests
 app.use(
   cors({
     origin: process.env.FRONTEND_URL || "https://localhost:3000",
@@ -101,7 +87,7 @@ if (process.env.NODE_ENV === "development") {
   app.use(morgan("combined"));
 }
 
-// Request timing middleware
+// Performance monitoring middleware
 app.use((req, res, next) => {
   req.startTime = Date.now();
 
@@ -115,7 +101,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Body parsing middleware
+// middleware for parsing JSON and URL-encoded data
+// protects against large payloads
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
@@ -123,7 +110,8 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
-// Rate limiting
+// Rate limiting for all routes with /api/
+// Protects against brute force attacks and abuse
 app.use("/api/", generalLimiter);
 
 // Health check endpoint
@@ -174,10 +162,10 @@ socketHandler(io);
 
 // Graceful shutdown
 const gracefulShutdown = async () => {
-  console.log("Received shutdown signal, closing server gracefully...");
+  console.log("Received shutdown signal, closing httpServer gracefully...");
 
   // Close server to new connections
-  server.close(() => {
+  httpServer.close(() => {
     console.log("HTTP server closed");
   });
 
@@ -219,7 +207,7 @@ process.on("unhandledRejection", (err) => {
 
 // Start server
 const PORT = process.env.PORT || 5002;
-server.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`
 🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}
 📊 Health check available at http://localhost:${PORT}/health
@@ -227,4 +215,4 @@ server.listen(PORT, () => {
   `);
 });
 
-module.exports = { app, server, io };
+module.exports = { app, httpServer, io };

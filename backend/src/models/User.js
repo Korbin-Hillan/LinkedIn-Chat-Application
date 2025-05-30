@@ -37,11 +37,12 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  },
+  }
 );
 
-// index for quick lookup by linkedinId
+// LinkIn ID lookup index
 userSchema.index({ linkedinId: 1 });
+// Email lookup index
 userSchema.index({ email: 1 });
 
 module.exports = mongoose.model("User", userSchema);

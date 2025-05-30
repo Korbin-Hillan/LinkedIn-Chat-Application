@@ -11,6 +11,7 @@ const auth = async (req, res, next) => {
         .json({ error: "Access denied. No token provided." });
     }
 
+    // Verify the token
     const decoded = verifyToken(token);
     const user = await User.findById(decoded.userId);
 

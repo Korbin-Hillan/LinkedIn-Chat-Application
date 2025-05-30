@@ -6,20 +6,6 @@ const linkedinAuth = async (req, res) => {
   try {
     const { code } = req.body;
 
-    console.log(
-      "📝 Received authorization code:",
-      code ? "Present" : "Missing"
-    );
-    console.log(
-      "🔧 Using Client ID:",
-      process.env.LINKEDIN_CLIENT_ID ? "Set" : "Missing"
-    );
-    console.log(
-      "🔑 Using Client Secret:",
-      process.env.LINKEDIN_CLIENT_SECRET ? "Set" : "Missing"
-    );
-    console.log("🔗 Using Redirect URI:", process.env.LINKEDIN_CALLBACK_URL);
-
     if (!code) {
       return res.status(400).json({ error: "Authorization code is required" });
     }
@@ -37,6 +23,7 @@ const linkedinAuth = async (req, res) => {
       client_secret: "[HIDDEN]",
     });
 
+    // Exchange authorization code for access token
     const tokenResponse = await axios.post(
       "https://www.linkedin.com/oauth/v2/accessToken",
       new URLSearchParams(tokenRequestData),
@@ -73,7 +60,7 @@ const linkedinAuth = async (req, res) => {
       locale: userInfo.locale,
       email_verified: userInfo.email_verified, // added this incase needed down the line
     };
-
+    // Query the database for the user
     let user = await User.findOne({ linkedinId: userData.linkedinId });
 
     if (!user) {
@@ -100,6 +87,7 @@ const linkedinAuth = async (req, res) => {
       await user.save();
     }
 
+    // Generate JWT token
     const token = generateToken({
       userId: user._id,
       linkedinId: user.linkedinId,
@@ -107,6 +95,7 @@ const linkedinAuth = async (req, res) => {
 
     console.log("Authentication successful for user:", user.email);
 
+    // Return to frontend with token and user info
     res.json({
       success: true,
       token,

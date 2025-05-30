@@ -28,11 +28,12 @@ const messageSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  },
+  }
 );
 
-// Indexes for efficient querying
+// finding messages by sender and receiver
 messageSchema.index({ sender: 1, receiver: 1 });
+// sorts messages by time (newest first)
 messageSchema.index({ timestamp: -1 });
 
 module.exports = mongoose.model("Message", messageSchema);

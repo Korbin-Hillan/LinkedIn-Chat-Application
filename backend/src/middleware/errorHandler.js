@@ -7,7 +7,7 @@ const errorHandler = (err, req, res, next) => {
   let message = err.message || "Internal Server Error";
   let errors = null;
 
-  // Handle specific error types
+  // MongoDB validation errors
   if (err.name === "ValidationError") {
     statusCode = 400;
     const validationErrors = Object.values(err.errors).map((e) => ({
@@ -18,11 +18,13 @@ const errorHandler = (err, req, res, next) => {
     errors = validationErrors;
   }
 
+  // Invalid MongoDB ID
   if (err.name === "CastError") {
     statusCode = 400;
     message = "Invalid ID format";
   }
 
+  // Duplicate user email
   if (err.code === 11000) {
     statusCode = 409;
     const field = Object.keys(err.keyPattern)[0];
@@ -39,7 +41,6 @@ const errorHandler = (err, req, res, next) => {
     message = "Token expired";
   }
 
-  // Send error response
   res.status(statusCode).json({
     success: false,
     error: message,

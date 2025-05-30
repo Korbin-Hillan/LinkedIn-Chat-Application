@@ -5,6 +5,7 @@ const { invalidateCache } = require("../middleware/cache");
 
 const sendMessage = async (req, res) => {
   try {
+    // Validates request data
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -27,8 +28,10 @@ const sendMessage = async (req, res) => {
       timestamp: new Date(),
     });
 
+    // Save message to database
     await message.save();
 
+    // Invalidate cache for sender and receiver messages
     await invalidateCache(`messages:${senderId}:*`);
     await invalidateCache(`messages:${receiverId}:*`);
 
@@ -67,6 +70,7 @@ const getChatHistory = async (req, res) => {
       .skip(skip)
       .limit(parseInt(limit));
 
+    // Count total messages for pagination
     const total = await Message.countDocuments({
       $or: [
         { sender: currentUserId, receiver: userId },
@@ -97,7 +101,7 @@ const getAllUsers = async (req, res) => {
     // Get all users except current user
     const users = await User.find({ _id: { $ne: currentUserId } })
       .select("firstName lastName profilePicture isOnline lastSeen")
-      .sort({ firstName: 1 });
+      .sort({ firstName: 1 }); // Alphabetically sort by first name
 
     res.json({
       success: true,
