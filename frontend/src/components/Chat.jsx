@@ -180,22 +180,21 @@ const Chat = () => {
       console.log("📨 Received message:", message);
 
       const currentUserId = normalizedUser.id;
-      const isFromSelectedUser =
-        selectedUser && message.sender._id === selectedUser._id;
-      const isForCurrentUser = message.receiver._id === currentUserId;
 
-      // Add message to the appropriate conversation
+      // Skip processing if this is a message from the current user (we already added it locally)
       if (message.sender._id === currentUserId) {
-        // Message sent by current user
-        updateMessagesForUser(message.receiver._id, (prev) => [
-          ...prev,
-          message,
-        ]);
-      } else if (isForCurrentUser) {
-        // Message received by current user
+        console.log("Skipping own message from receive_message");
+        return;
+      }
+
+      // This is a message TO the current user
+      if (message.receiver._id === currentUserId) {
+        // Add to the sender's conversation
         updateMessagesForUser(message.sender._id, (prev) => [...prev, message]);
 
         // Auto-mark as read if chat is focused and this is the selected user
+        const isFromSelectedUser =
+          selectedUser && message.sender._id === selectedUser._id;
         if (isChatFocused && isFromSelectedUser) {
           console.log("✅ Auto-marking message as read");
           newSocket.emit("message_read", { messageId: message._id });
@@ -207,14 +206,9 @@ const Chat = () => {
             )
           );
         }
-      }
 
-      // Show notification if needed
-      if (
-        message.sender._id !== currentUserId &&
-        (!isChatFocused || !isFromSelectedUser)
-      ) {
-        if (document.hidden || !isFromSelectedUser) {
+        // Show notification if needed
+        if (!isChatFocused || !isFromSelectedUser) {
           showNotification(message);
         }
       }
@@ -222,7 +216,22 @@ const Chat = () => {
 
     newSocket.on("message_sent", (message) => {
       console.log("✅ Message sent confirmation:", message);
-      // Message should already be added via receive_message or send logic
+      // Update the message with server data (like _id, timestamp)
+      if (message.sender._id === normalizedUser.id) {
+        updateMessagesForUser(message.receiver._id, (prev) => {
+          // Find the temporary message and update it
+          const lastMessage = prev[prev.length - 1];
+          if (
+            lastMessage &&
+            !lastMessage._id &&
+            lastMessage.content === message.content
+          ) {
+            return [...prev.slice(0, -1), message];
+          }
+          // If we can't find the temporary message, just add the confirmed one
+          return [...prev, message];
+        });
+      }
     });
 
     newSocket.on("user_typing", (data) => {
